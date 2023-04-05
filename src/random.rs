@@ -3,14 +3,17 @@ use std::mem::MaybeUninit;
 use crate::error::SysError;
 
 const BUFFER_LENGTH: usize = 1024;
+#[cfg(target_os = "windows")]
 static mut BUFFER: [MaybeUninit<u8>; BUFFER_LENGTH] = [MaybeUninit::uninit(); BUFFER_LENGTH];
+#[cfg(target_os = "linux")]
+static mut BUFFER: [u8; BUFFER_LENGTH] = [0; BUFFER_LENGTH];
 static mut BUFFER_INDEX: usize = 0;
 static mut INITIALIZED: bool = false;
 
 macro_rules! read_bytes {
     ($t:ty, $byte_count:literal) => {
         {
-            let bytes = <[u8; $byte_count]>::try_from(get_buffer_slice($byte_count)).expect(&format!("Conversion from slice of len {} should work", $byte_count));
+            let bytes = <[u8; $byte_count]>::try_from(get_buffer_slice($byte_count)).expect(&format!("Unable to convert from slice of length {}", $byte_count));
             #[cfg(target_endian = "big")]
             {
                 <$t>::from_be_bytes(bytes)
@@ -80,7 +83,14 @@ fn get_buffer_slice(slice_size: usize) -> &'static [u8] {
     unsafe {
         let slice = &BUFFER[start_index..(start_index + slice_size)];
         BUFFER_INDEX = start_index + slice_size;
-        & *(slice as *const [MaybeUninit<u8>] as *const [u8])
+        #[cfg(target_os = "windows")]
+        {
+            & *(slice as *const [MaybeUninit<u8>] as *const [u8])
+        }
+        #[cfg(target_os = "linux")]
+        {
+            slice
+        }
     }
 }
 
@@ -99,12 +109,14 @@ fn initialize_buffer_slice() {
         }
     }
     #[cfg(target_os = "linux")]
-    {}
+    unsafe {
+        linux::getrandom_inner(&mut BUFFER);
+    }
 }
 
+#[inline]
 fn check_slice_bounds(start_index: usize, slice_len: usize) -> bool {
-    let end_index: usize = start_index + slice_len;
-    end_index < BUFFER_LENGTH
+    start_index + slice_len < BUFFER_LENGTH
 }
 
 #[cfg(target_os = "windows")]
@@ -155,5 +167,21 @@ mod windows {
     #[inline]
     fn extern_error(extern_return: u32) -> bool {
         extern_return >> 30 == 0b11
+    }
+}
+
+#[cfg(target_os = "linux")]
+mod linux {
+    use std::mem::MaybeUninit;
+    use std::error::Error;
+    use std::io::Read;
+
+    use std::num::NonZeroU32;
+    use crate::error::SysError;
+
+
+    pub fn getrandom_inner(dest: &mut [u8]) {
+        let mut f = std::fs::File::open("/dev/urandom").expect("Unable to open /dev/urandom");
+        f.read(dest).expect("Error reading from /dev/urandom into buffer");
     }
 }
