@@ -6,7 +6,6 @@ use core::f64::consts::LN_2;
 pub struct BloomFilter<T>
     where T: ?Sized {
     bitmap: Vec<u8>,
-    optimal_m: u64,
     byte_count: usize,
     optimal_k: u32,
     hashers: [DefaultHasher; 2],
@@ -16,7 +15,6 @@ pub struct BloomFilter<T>
 struct ByteIndex(usize, u8);
 
 impl<T> BloomFilter<T> {
-    const FF_BYTE: u8 = 0xff;
 
     pub fn new(item_count: usize, fp_rate: f64) -> Self
     where T: Default {
@@ -33,7 +31,6 @@ impl<T> BloomFilter<T> {
         }
         BloomFilter {
             bitmap,
-            optimal_m: optimal_map_size as u64,
             byte_count,
             optimal_k: optimal_hasher_count,
             hashers,
