@@ -1,7 +1,3 @@
-use std::error::Error;
-use std::mem::MaybeUninit;
-use crate::error::SysError;
-
 const BUFFER_LENGTH: usize = 1024;
 #[cfg(target_os = "windows")]
 static mut BUFFER: [MaybeUninit<u8>; BUFFER_LENGTH] = [MaybeUninit::uninit(); BUFFER_LENGTH];
@@ -172,13 +168,7 @@ mod windows {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use std::mem::MaybeUninit;
-    use std::error::Error;
     use std::io::Read;
-
-    use std::num::NonZeroU32;
-    use crate::error::SysError;
-
 
     pub fn getrandom_inner(dest: &mut [u8]) {
         let mut f = std::fs::File::open("/dev/urandom").expect("Unable to open /dev/urandom");

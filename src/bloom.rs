@@ -28,7 +28,9 @@ impl<T> BloomFilter<T> {
         ];
         let byte_count = optimal_map_size / 8;
         let mut bitmap: Vec<u8> = Vec::with_capacity(byte_count);
-        bitmap.fill(0);
+        for _ in 0..byte_count {
+            bitmap.push(0);
+        }
         BloomFilter {
             bitmap,
             optimal_m: optimal_map_size as u64,
@@ -99,6 +101,7 @@ impl<T> BloomFilter<T> {
 
     fn set_byte(&mut self, byte_index: ByteIndex) {
         let bitmask = Self::get_bitmask(byte_index.1);
+
         let byte = self.bitmap.get_mut(byte_index.0 % self.byte_count).unwrap();
         *byte = *byte | bitmask;
     }
