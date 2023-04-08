@@ -1,3 +1,5 @@
+//! This module leverages the running OS to get random numbers. It supports windows and linux.
+
 const BUFFER_LENGTH: usize = 1024;
 #[cfg(target_os = "windows")]
 static mut BUFFER: [MaybeUninit<u8>; BUFFER_LENGTH] = [MaybeUninit::uninit(); BUFFER_LENGTH];

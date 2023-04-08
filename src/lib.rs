@@ -1,5 +1,5 @@
 extern crate core;
 
-pub mod random;
+pub mod os_random;
 pub mod bloom;
 pub mod error;

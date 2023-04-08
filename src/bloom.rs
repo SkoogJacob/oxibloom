@@ -3,6 +3,7 @@ use std::hash::{BuildHasher, Hash, Hasher};
 use std::marker::PhantomData;
 use core::f64::consts::LN_2;
 
+#[derive(Debug)]
 pub struct BloomFilter<T>
     where T: ?Sized {
     bitmap: Vec<u8>,
